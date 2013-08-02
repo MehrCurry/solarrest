@@ -15,6 +15,7 @@ environments {
         dataSource {
             dbCreate = "update" // one of 'create', 'create-drop', 'update', 'validate', ''
             url = "jdbc:h2:devDb;MVCC=TRUE;LOCK_TIMEOUT=10000"
+            logSql = true
         }
     }
     test {
