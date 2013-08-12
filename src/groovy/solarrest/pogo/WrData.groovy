@@ -1,5 +1,8 @@
 package solarrest.pogo
 
+import groovy.transform.ToString
+
+@ToString
 class WrData {
 
     Double ac,dc1,dc2,dc3,wh,u1,u2,u3,temp

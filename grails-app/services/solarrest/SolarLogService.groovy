@@ -1,7 +1,5 @@
 package solarrest
-
 import grails.plugin.cache.Cacheable
-import groovyx.gpars.GParsPool
 import org.apache.commons.lang3.Validate
 import org.joda.time.DateMidnight
 import org.joda.time.DateTime
@@ -16,6 +14,7 @@ import javax.script.ScriptContext
 import javax.script.ScriptEngineManager
 
 class SolarLogService {
+    static parser=DateTimeFormat.forPattern("dd.MM.yy")
     static yymmdd= DateTimeFormat.forPattern('yyMMdd')
     static ScriptEngineManager factory = new ScriptEngineManager()
 
@@ -67,29 +66,23 @@ class SolarLogService {
 
     @Cacheable("days_hist")
     def getDaysHist(String url) {
-        def engine = factory.getEngineByName("JavaScript")
-        def bindings=engine.getBindings(ScriptContext.ENGINE_SCOPE)
-        def da = new NativeArray();
-        bindings.put("da",da)
-        bindings.put("dx",0)
         def filename = url + "days_hist.js"
-        engine.eval new InputStreamReader(new URL(filename).openStream())
-
-        def parser=DateTimeFormat.forPattern("dd.MM.yy")
-        da.toArray(String[]).collect {s ->
+        def entries = []
+        new InputStreamReader(new URL(filename).openStream()).eachLine {
+            def m = it =~ /"(.*)"/
+            def s=m[0][1]
             def parts=s.split('\\|')
             def entry=new DayEntry(dt: parser.parseDateTime(parts[0]))
             parts.tail().each {
                 entry.addToWrData(new WrDataDays(it))
             }
-            entry
+            entries << entry
         }
+        entries
     }
 
     def getFirstDay(coll) {
-        GParsPool.withPool {
-            coll.parallel.map { it.dt }.min {it}
-        }
+        coll.collect { it.dt }.min {it}
     }
 
     def getAllData(String url) {

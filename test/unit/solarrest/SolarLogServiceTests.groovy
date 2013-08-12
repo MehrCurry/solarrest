@@ -13,7 +13,7 @@ class SolarLogServiceTests {
 
 
     // private static final String TEST_URL = "http://monitoring.norderstedt-energie.de/1064/"
-    private static final String TEST_URL = "http://monitoring.norderstedt-energie.de/1002/"
+    private static final String TEST_URL = "http://monitoring.norderstedt-energie.de/1009/"
     // private static final String TEST_URL = new File("./data/").toURI().toURL().toString();
 
     void testCache() {

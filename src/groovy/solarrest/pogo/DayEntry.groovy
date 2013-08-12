@@ -1,7 +1,9 @@
 package solarrest.pogo
 
+import groovy.transform.ToString
 import org.joda.time.DateTime
 
+@ToString
 class DayEntry {
 
     def wrData=[]
