@@ -1,4 +1,5 @@
 package solarrest
+
 import grails.plugin.cache.Cacheable
 import org.apache.commons.lang3.Validate
 import org.joda.time.DateMidnight
@@ -14,49 +15,46 @@ import javax.script.ScriptContext
 import javax.script.ScriptEngineManager
 
 class SolarLogService {
-    static parser=DateTimeFormat.forPattern("dd.MM.yy")
-    static yymmdd= DateTimeFormat.forPattern('yyMMdd')
+    static parser = DateTimeFormat.forPattern("dd.MM.yy")
+    static yymmdd = DateTimeFormat.forPattern('yyMMdd')
     static ScriptEngineManager factory = new ScriptEngineManager()
 
     @Cacheable('minDay')
-    def getMinDay(String url,DateTime aDate=DateMidnight.now()) {
+    def getMinDay(String url, DateTime aDate = DateMidnight.now()) {
         def script = url + getScriptName(aDate)
         // copyFile(script)
         println("Getting $script")
 
         def engine = factory.getEngineByName("JavaScript")
-        def bindings=engine.getBindings(ScriptContext.ENGINE_SCOPE)
+        def bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE)
         def m = new NativeArray();
-        bindings.put("m",m)
-        bindings.put("mi",0)
+        bindings.put("m", m)
+        bindings.put("mi", 0)
         engine.eval new InputStreamReader(new URL(script).openStream())
-        Validate.isTrue(m.size()>0,"Empty array $script")
+        Validate.isTrue(m.size() > 0, "Empty array $script")
 
-        def parser=DateTimeFormat.forPattern('dd.MM.yy HH:mm:ss')
+        def parser = DateTimeFormat.forPattern('dd.MM.yy HH:mm:ss')
         def array = m.toArray(String[])
-            array
-                    .filter{ it }
-                    .map {
-                        Validate.notNull(it)
-                        Validate.isInstanceOf(String.class,it)
-                        def parts=it.split('\\|')
-                        def dt=parser.parseDateTime(parts[0])
-                        def entry=new DayEntry(dt: dt)
-                        parts.tail().each {
-                            entry.addToWrData(new WrData(it))
-                        }
-                        entry
-                    }
-                    .collection
+        array.collect {
+            Validate.notNull(it)
+            Validate.isInstanceOf(String.class, it)
+            def parts = it.split('\\|')
+            def dt = parser.parseDateTime(parts[0])
+            def entry = new DayEntry(dt: dt)
+            parts.tail().each {
+                entry.addToWrData(new WrData(it))
+            }
+            entry
+        }
     }
 
     def copyFile(String anUrl) {
-        def parts=anUrl.split("/");
+        def parts = anUrl.split("/");
         Validate.notEmpty(parts)
-        Validate.isTrue(parts.size()>0,"Could not split $anUrl")
-        def source=new InputStreamReader(new URL(anUrl).openStream())
-        def filename=parts.last()
-        def dest=new File("data/$filename").newDataOutputStream()
+        Validate.isTrue(parts.size() > 0, "Could not split $anUrl")
+        def source = new InputStreamReader(new URL(anUrl).openStream())
+        def filename = parts.last()
+        def dest = new File("data/$filename").newDataOutputStream()
 
         dest << source
 
@@ -70,9 +68,9 @@ class SolarLogService {
         def entries = []
         new InputStreamReader(new URL(filename).openStream()).eachLine {
             def m = it =~ /"(.*)"/
-            def s=m[0][1]
-            def parts=s.split('\\|')
-            def entry=new DayEntry(dt: parser.parseDateTime(parts[0]))
+            def s = m[0][1]
+            def parts = s.split('\\|')
+            def entry = new DayEntry(dt: parser.parseDateTime(parts[0]))
             parts.tail().each {
                 entry.addToWrData(new WrDataDays(it))
             }
@@ -82,35 +80,35 @@ class SolarLogService {
     }
 
     def getFirstDay(coll) {
-        coll.collect { it.dt }.min {it}
+        coll.collect { it.dt }.min { it }
     }
 
     def getAllData(String url) {
-        def day=getDaysHist(url).collect {it.dt}.min();
+        def day = getDaysHist(url).collect { it.dt }.min();
         def coll = [] as Set<DayEntry>
         while (!day.afterNow) {
             coll.add(day)
-            day=day.plusDays(1);
+            day = day.plusDays(1);
         }
 
-        coll.collect {getMinDay(url,it)}.flatten()
+        coll.collect { getMinDay(url, it) }.flatten()
     }
 
-    def getSumByYear(year,data) {
-            data.findAll {it.dt.year == year}
-                    .collect { it.getSum() }
-                    .sum()
+    def getSumByYear(year, data) {
+        data.findAll { it.dt.year == year }
+                .collect { it.getSum() }
+                .sum()
     }
 
-    def getSumByMonth(month,year,data) {
-            data.findAll {it.dt.year == year && it.dt.monthOfYear == month}
-                    .collect { it.getSum() }
-                    .sum()
+    def getSumByMonth(month, year, data) {
+        data.findAll { it.dt.year == year && it.dt.monthOfYear == month }
+                .collect { it.getSum() }
+                .sum()
     }
 
     String getScriptName(BaseDateTime aDate) {
         isToday(aDate) ?
-            "min_day.js" : "min${aDate.toString(yymmdd)}.js"
+                "min_day.js" : "min${aDate.toString(yymmdd)}.js"
     }
 
     boolean isToday(BaseDateTime aDate) {

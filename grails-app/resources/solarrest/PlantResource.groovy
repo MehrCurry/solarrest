@@ -42,8 +42,8 @@ class PlantResource {
         def plant=Plant.findById(id)
         def data=solarLogService.getDaysHist(plant.url)
         def total=solarLogService.getSumByMonth(month,year,data)
-        println("$year : $total")
-        total
+        println("$plant.name $month.$year : $total")
+        ['Total':total]
     }
 
 }
